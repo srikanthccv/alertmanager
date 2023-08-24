@@ -3,7 +3,7 @@
 [![Docker Repository on Quay](https://quay.io/repository/prometheus/alertmanager/status "Docker Repository on Quay")][quay]
 [![Docker Pulls](https://img.shields.io/docker/pulls/prom/alertmanager.svg?maxAge=604800)][hub]
 
-The Alertmanager handles alerts sent by client applications such as the Prometheus server. It takes care of deduplicating, grouping, and routing them to the correct receiver integrations such as email, PagerDuty, or OpsGenie. It also takes care of silencing and inhibition of alerts.
+The Alertmanager handles alerts sent by client applications such as the Prometheus server. It takes care of deduplicating, grouping, and routing them to the correct [receiver integrations](https://prometheus.io/docs/alerting/latest/configuration/#receiver) such as email, PagerDuty, OpsGenie, or many other [mechanisms](https://prometheus.io/docs/operating/integrations/#alertmanager-webhook-receiver) thanks to the webhook receiver. It also takes care of silencing and inhibition of alerts.
 
 * [Documentation](http://prometheus.io/docs/alerting/alertmanager/)
 
@@ -210,7 +210,7 @@ _API v2 is still under heavy development and thereby subject to change._
 
 Alternatively you can install with:
 ```
-go get github.com/prometheus/alertmanager/cmd/amtool
+$ go install github.com/prometheus/alertmanager/cmd/amtool@latest
 ```
 
 ### Examples
@@ -372,6 +372,7 @@ be configured to communicate with each other. This is configured using the
 - `--cluster.probe-interval` value: interval between random node probes (default "1s")
 - `--cluster.reconnect-interval` value: interval between attempting to reconnect to lost peers (default "10s")
 - `--cluster.reconnect-timeout` value: length of time to attempt to reconnect to a lost peer (default: "6h0m0s")
+- `--cluster.label` value: the label is an optional string to include on each packet and stream. It uniquely identifies the cluster and prevents cross-communication issues when sending gossip messages (default:"")
 
 The chosen port in the `cluster.listen-address` flag is the port that needs to be
 specified in the `cluster.peer` flag of the other peers.

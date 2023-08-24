@@ -1,3 +1,95 @@
+## 0.26.0 / 2023-08-23
+
+* [CHANGE] Telegram Integration: `api_url` is now optional. #2981
+* [CHANGE] Telegram Integration: `ParseMode` default is now `HTML` instead of `MarkdownV2`. #2981
+* [CHANGE] Webhook Integration: `url` is now marked as a secret. It will no longer show up in the logs as clear-text. #3228
+* [CHANGE] Metrics: New label `reason` for `alertmanager_notifications_failed_total` metric to indicate the type of error of the alert delivery. #3094 #3307
+* [FEATURE] Clustering: New flag `--cluster.label`, to help to block any traffic that is not meant for the cluster. #3354
+* [FEATURE] Integrations: Add Microsoft Teams as a supported integration. #3324
+* [ENHANCEMENT] Telegram Integration: Support `bot_token_file` for loading this secret from a file. #3226
+* [ENHANCEMENT] Webhook Integration: Support `url_file` for loading this secret from a file. #3223
+* [ENHANCEMENT] Webhook Integration: Leading and trailing white space is now removed for the contents of `url_file`. #3363
+* [ENHANCEMENT] Pushover Integration: Support options `device` and `sound` (sound was previously supported but undocumented). #3318
+* [ENHANCEMENT] Pushover Integration: Support `user_key_file` and `token_file` for loading this secret from a file. #3200
+* [ENHANCEMENT] Slack Integration: Support errors wrapped in successful (HTTP status code 200) responses. #3121
+* [ENHANCEMENT] API: Add `CORS` and `Cache-Control` HTTP headers to all version 2 API routes. #3195
+* [ENHANCEMENT] UI: Receiver name is now visible as part of the alerts page. #3289
+* [ENHANCEMENT] Templating: Better default text when using `{{ .Annotations }}` and `{{ .Labels }}`. #3256
+* [ENHANCEMENT] Templating: Introduced a new function `trimSpace` which removes leading and trailing white spaces. #3223
+* [ENHANCEMENT] CLI: `amtool silence query` now supports the `--id` flag to query an individual silence. #3241
+* [ENHANCEMENT] Metrics: Introduced `alertmanager_nflog_maintenance_total` and `alertmanager_nflog_maintenance_errors_total` to monitor maintenance of the notification log. #3286 
+* [ENHANCEMENT] Metrics: Introduced `alertmanager_silences_maintenance_total` and `alertmanager_silences_maintenance_errors_total` to monitor maintenance of silences. #3285
+* [ENHANCEMENT] Logging: Log GroupKey and alerts on alert delivery when using debug mode. #3438
+* [BUGFIX] Configuration: Empty list of `receivers` and `inhibit_rules` would cause the alertmanager to crash. #3209 
+* [BUGFIX] Templating: Fixed a race condition when using the `title` function. It is now race-safe. #3278
+* [BUGFIX] API: Fixed duplicate receiver names in the `api/v2/receivers` API endpoint. #3338
+* [BUGFIX] API: Attempting to delete a silence now returns the correct status code, `404` instead of `500`. #3352
+* [BUGFIX] Clustering: Fixes a panic when `tls_client_config` is empty. #3443
+* [BUGFIX] Fix stored XSS via the /api/v1/alerts endpoint in the Alertmanager UI.
+
+## 0.25.0 / 2022-12-22
+
+* [CHANGE] Change the default `parse_mode` value from `MarkdownV2` to `HTML` for Telegram. #2981
+* [CHANGE] Make `api_url` field optional for Telegram. #2981
+* [CHANGE] Use CanonicalMIMEHeaderKey instead of TitleCasing for email headers. #3080
+* [CHANGE] Reduce the number of notification logs broadcasted between peers by expiring them after (2 * repeat interval). #2982
+* [FEATURE] Add `proxy_url` support for OAuth2 in HTTP client configuration. #3010
+* [FEATURE] Reload TLS certificate and key from disk when updated. #3168
+* [FEATURE] Add Discord integration. #2948
+* [FEATURE] Add Webex integration. #3132
+* [ENHANCEMENT] Add `--web.systemd-socket` flag to systemd socket activation listeners instead of port listeners (Linux only). #3140
+* [ENHANCEMENT] Add `enable_http2` support in HTTP client configuration. #3010
+* [ENHANCEMENT] Add `min_version` support to select the minimum TLS version in HTTP client configuration. #3010
+* [ENHANCEMENT] Add `max_version` support to select the maximum TLS version in HTTP client configuration. #3168
+* [ENHANCEMENT] Emit warning logs when truncating messages in notifications. #3145
+* [ENHANCEMENT] Add `--data.maintenance-interval` flag to define the interval between the garbage collection and snapshotting to disk of the silences and the notification logs. #2849
+* [ENHANCEMENT] Support HEAD method for the `/-/healty` and `/-/ready` endpoints. #3039
+* [ENHANCEMENT] Truncate messages with the `…` ellipsis character instead of the 3-dots string `...`. #3072
+* [ENHANCEMENT] Add support for reading global and local SMTP passwords from files. #3038
+* [ENHANCEMENT] Add Location support to time intervals. #2782
+* [ENHANCEMENT] UI: Add 'Link' button to alerts in list. #2880
+* [ENHANCEMENT] Add the `source` field to the PagerDuty configuration. #3106
+* [ENHANCEMENT] Add support for reading PagerDuty routing and service keys from files. #3107
+* [ENHANCEMENT] Log response details when notifications fail for Webhooks, Pushover and VictorOps. #3103
+* [ENHANCEMENT] UI: Allow to choose the first day of the week as Sunday or Monday. #3093
+* [ENHANCEMENT] Add support for reading VictorOps API key from file. #3111
+* [ENHANCEMENT] Support templating for Opsgenie's responder type. #3060
+* [BUGFIX] Fail configuration loading if `api_key` and `api_key_file` are defined at the same time. #2910
+* [BUGFIX] Fix the `alertmanager_alerts` metric to avoid counting resolved alerts as active. Also added a new `alertmanager_marked_alerts` metric that retain the old behavior. #2943
+* [BUGFIX] Trim contents of Slack API URLs when reading from files. #2929
+* [BUGFIX] amtool: Avoid panic when the label value matcher is empty. #2968
+* [BUGFIX] Fail configuration loading if `api_url` is empty for OpsGenie. #2910
+* [BUGFIX] Fix email template for resolved notifications. #3166
+* [BUGFIX] Use the HTML template engine when the parse mode is HTML for Telegram. #3183
+
+## 0.24.0 / 2022-03-24
+
+* [CHANGE] Add the `/api/v2` prefix to all endpoints in the OpenAPI specification and generated client code. #2696
+* [CHANGE] Remove the `github.com/prometheus/alertmanager/client` Go package. #2763
+* [FEATURE] Add `--cluster.tls-config` experimental flag to secure cluster traffic via mutual TLS. #2237
+* [FEATURE] Add support for active time intervals. Active and mute time intervals should be defined via `time_intervals` rather than `mute_time_intervals` (the latter is deprecated but it will be supported until v1.0). #2779
+* [FEATURE] Add Telegram integration. #2827
+* [ENHANCEMENT] Add `update_alerts` field to the OpsGenie configuration to update message and description when sending alerts. #2519
+* [ENHANCEMENT] Add `--cluster.allow-insecure-public-advertise-address-discovery` feature flag to enable discovery and use of public IP addresses for clustering. #2719
+* [ENHANCEMENT] Add `entity` and `actions` fields to the OpsGenie configuration. #2753
+* [ENHANCEMENT] Add `opsgenie_api_key_file` field to the global configuration. #2728
+* [ENHANCEMENT] Add support for `teams` responders to the OpsGenie configuration. #2685
+* [ENHANCEMENT] Add the User-Agent header to all notification requests. #2730
+* [ENHANCEMENT] Re-enable HTTP/2. #2720
+* [ENHANCEMENT] web: Add support for security-related HTTP headers. #2759
+* [ENHANCEMENT] amtool: Allow filtering of silences by `createdBy` author. #2718
+* [ENHANCEMENT] amtool: add `--http.config.file` flag to configure HTTP settings. #2764
+* [BUGFIX] Fix HTTP client configuration for the SNS receiver. #2706
+* [BUGFIX] Fix unclosed file descriptor after reading the silences snapshot file. #2710
+* [BUGFIX] Fix field names for `mute_time_intervals` in JSON marshaling. #2765
+* [BUGFIX] Ensure that the root route doesn't have any matchers. #2780
+* [BUGFIX] Truncate the message's title to 1024 chars to avoid hitting Slack limits. #2774
+* [BUGFIX] Fix the default HTML email template (`email.default.html`) to match with the canonical source. #2798
+* [BUGFIX] Detect SNS FIFO topic based on the rendered value. #2819
+* [BUGFIX] Avoid deleting and recreating a silence when an update is possible. #2816
+* [BUGFIX] api/v2: Return 200 OK when deleting an expired silence. #2817
+* [BUGFIX] amtool: Fix the silence's end date when adding a silence. The end date is (start date + duration) while it used to be (current time + duration). The new behavior is consistent with the update operation. #2741
+
 ## 0.23.0 / 2021-08-25
 
 * [FEATURE] Add AWS SNS receiver. #2615

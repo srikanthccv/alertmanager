@@ -80,7 +80,7 @@ func (o *PostAlertsParams) BindRequest(r *http.Request, route *middleware.Matche
 				res = append(res, err)
 			}
 
-			ctx := validate.WithOperationRequest(context.Background())
+			ctx := validate.WithOperationRequest(r.Context())
 			if err := body.ContextValidate(ctx, route.Formats); err != nil {
 				res = append(res, err)
 			}

@@ -15,6 +15,7 @@ package pushover
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/go-kit/log"
@@ -57,5 +58,55 @@ func TestPushoverRedactedURL(t *testing.T) {
 	require.NoError(t, err)
 	notifier.apiURL = u.String()
 
-	test.AssertNotifyLeaksNoSecret(t, ctx, notifier, key, token)
+	test.AssertNotifyLeaksNoSecret(ctx, t, notifier, key, token)
+}
+
+func TestPushoverReadingUserKeyFromFile(t *testing.T) {
+	ctx, apiURL, fn := test.GetContextWithCancelingURL()
+	defer fn()
+
+	const userKey = "user key"
+	f, err := os.CreateTemp("", "pushover_user_key")
+	require.NoError(t, err, "creating temp file failed")
+	_, err = f.WriteString(userKey)
+	require.NoError(t, err, "writing to temp file failed")
+
+	notifier, err := New(
+		&config.PushoverConfig{
+			UserKeyFile: f.Name(),
+			Token:       config.Secret("token"),
+			HTTPConfig:  &commoncfg.HTTPClientConfig{},
+		},
+		test.CreateTmpl(t),
+		log.NewNopLogger(),
+	)
+	notifier.apiURL = apiURL.String()
+	require.NoError(t, err)
+
+	test.AssertNotifyLeaksNoSecret(ctx, t, notifier, userKey)
+}
+
+func TestPushoverReadingTokenFromFile(t *testing.T) {
+	ctx, apiURL, fn := test.GetContextWithCancelingURL()
+	defer fn()
+
+	const token = "token"
+	f, err := os.CreateTemp("", "pushover_token")
+	require.NoError(t, err, "creating temp file failed")
+	_, err = f.WriteString(token)
+	require.NoError(t, err, "writing to temp file failed")
+
+	notifier, err := New(
+		&config.PushoverConfig{
+			UserKey:    config.Secret("user key"),
+			TokenFile:  f.Name(),
+			HTTPConfig: &commoncfg.HTTPClientConfig{},
+		},
+		test.CreateTmpl(t),
+		log.NewNopLogger(),
+	)
+	notifier.apiURL = apiURL.String()
+	require.NoError(t, err)
+
+	test.AssertNotifyLeaksNoSecret(ctx, t, notifier, token)
 }

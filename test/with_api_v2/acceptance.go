@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -84,11 +83,6 @@ func NewAcceptanceTest(t *testing.T, opts *AcceptanceOpts) *AcceptanceTest {
 		opts:    opts,
 		actions: map[float64][]func(){},
 	}
-	// TODO: Should this really be set during creation time? Why not do this
-	// during Run() time, maybe there is something else long happening between
-	// creation and running.
-	opts.baseTime = time.Now()
-
 	return test
 }
 
@@ -125,7 +119,7 @@ func (t *AcceptanceTest) AlertmanagerCluster(conf string, size int) *Alertmanage
 			opts: t.opts,
 		}
 
-		dir, err := ioutil.TempDir("", "am_test")
+		dir, err := os.MkdirTemp("", "am_test")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -185,6 +179,10 @@ func (t *AcceptanceTest) Run() {
 	if err != nil {
 		t.T.Fatal(err)
 	}
+
+	// Set the reference time right before running the test actions to avoid
+	// test failures due to slow setup of the test environment.
+	t.opts.baseTime = time.Now()
 
 	go t.runActions()
 
@@ -250,7 +248,7 @@ type Alertmanager struct {
 
 	apiAddr     string
 	clusterAddr string
-	clientV2    *apiclient.Alertmanager
+	clientV2    *apiclient.AlertmanagerAPI
 	cmd         *exec.Cmd
 	confFile    *os.File
 	dir         string
@@ -274,14 +272,14 @@ func (amc *AlertmanagerCluster) Start() error {
 	for _, am := range amc.ams {
 		err := am.Start(peerFlags)
 		if err != nil {
-			return fmt.Errorf("starting alertmanager cluster: %v", err.Error())
+			return fmt.Errorf("failed to start alertmanager cluster: %v", err.Error())
 		}
 	}
 
 	for _, am := range amc.ams {
 		err := am.WaitForCluster(len(amc.ams))
 		if err != nil {
-			return fmt.Errorf("starting alertmanager cluster: %v", err.Error())
+			return fmt.Errorf("failed to wait for Alertmanager instance %q to join cluster: %v", am.clusterAddr, err.Error())
 		}
 	}
 
@@ -323,7 +321,7 @@ func (am *Alertmanager) Start(additionalArg []string) error {
 	am.cmd = cmd
 
 	if err := am.cmd.Start(); err != nil {
-		return fmt.Errorf("starting alertmanager failed: %s", err)
+		return err
 	}
 
 	go func() {
@@ -333,14 +331,15 @@ func (am *Alertmanager) Start(additionalArg []string) error {
 	}()
 
 	time.Sleep(50 * time.Millisecond)
+	var lastErr error
 	for i := 0; i < 10; i++ {
-		_, err := am.clientV2.General.GetStatus(nil)
-		if err == nil {
+		_, lastErr = am.clientV2.General.GetStatus(nil)
+		if lastErr == nil {
 			return nil
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
-	return fmt.Errorf("starting alertmanager failed: timeout")
+	return fmt.Errorf("unable to get a successful response from the Alertmanager: %v", lastErr)
 }
 
 // WaitForCluster waits for the Alertmanager instance to join a cluster with the
@@ -365,8 +364,7 @@ func (am *Alertmanager) WaitForCluster(size int) error {
 	}
 
 	return fmt.Errorf(
-		"failed to wait for Alertmanager instance %q to join cluster: expected %v peers, but got %v",
-		am.clusterAddr,
+		"expected %v peers, but got %v",
 		size,
 		len(status.Payload.Cluster.Peers),
 	)
@@ -385,7 +383,7 @@ func (amc *AlertmanagerCluster) Terminate() {
 func (am *Alertmanager) Terminate() {
 	am.t.Helper()
 	if err := syscall.Kill(am.cmd.Process.Pid, syscall.SIGTERM); err != nil {
-		am.t.Fatalf("Error sending SIGTERM to Alertmanager process: %v", err)
+		am.t.Logf("Error sending SIGTERM to Alertmanager process: %v", err)
 	}
 }
 
@@ -422,26 +420,26 @@ func (amc *AlertmanagerCluster) Push(at float64, alerts ...*TestAlert) {
 // Push declares alerts that are to be pushed to the Alertmanager
 // server at a relative point in time.
 func (am *Alertmanager) Push(at float64, alerts ...*TestAlert) {
-	var cas models.PostableAlerts
-	for i := range alerts {
-		a := alerts[i].nativeAlert(am.opts)
-		alert := &models.PostableAlert{
-			Alert: models.Alert{
-				Labels:       a.Labels,
-				GeneratorURL: a.GeneratorURL,
-			},
-			Annotations: a.Annotations,
-		}
-		if a.StartsAt != nil {
-			alert.StartsAt = *a.StartsAt
-		}
-		if a.EndsAt != nil {
-			alert.EndsAt = *a.EndsAt
-		}
-		cas = append(cas, alert)
-	}
-
 	am.t.Do(at, func() {
+		var cas models.PostableAlerts
+		for i := range alerts {
+			a := alerts[i].nativeAlert(am.opts)
+			alert := &models.PostableAlert{
+				Alert: models.Alert{
+					Labels:       a.Labels,
+					GeneratorURL: a.GeneratorURL,
+				},
+				Annotations: a.Annotations,
+			}
+			if a.StartsAt != nil {
+				alert.StartsAt = *a.StartsAt
+			}
+			if a.EndsAt != nil {
+				alert.EndsAt = *a.EndsAt
+			}
+			cas = append(cas, alert)
+		}
+
 		params := alert.PostAlertsParams{}
 		params.WithContext(context.Background()).WithAlerts(cas)
 
@@ -509,15 +507,13 @@ func (amc *AlertmanagerCluster) UpdateConfig(conf string) {
 func (am *Alertmanager) UpdateConfig(conf string) {
 	if _, err := am.confFile.WriteString(conf); err != nil {
 		am.t.Fatal(err)
-		return
 	}
 	if err := am.confFile.Sync(); err != nil {
 		am.t.Fatal(err)
-		return
 	}
 }
 
 // Client returns a client to interact with the API v2 endpoint.
-func (am *Alertmanager) Client() *apiclient.Alertmanager {
+func (am *Alertmanager) Client() *apiclient.AlertmanagerAPI {
 	return am.clientV2
 }

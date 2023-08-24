@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -92,10 +92,6 @@ func NewAcceptanceTest(t *testing.T, opts *AcceptanceOpts) *AcceptanceTest {
 		opts:    opts,
 		actions: map[float64][]func(){},
 	}
-	// TODO: Should this really be set during creation time? Why not do this
-	// during Run() time, maybe there is something else long happening between
-	// creation and running.
-	opts.baseTime = time.Now()
 
 	return test
 }
@@ -122,7 +118,7 @@ func freeAddress() string {
 func AmtoolOk() (bool, error) {
 	stat, err := os.Stat(amtool)
 	if err != nil {
-		return false, fmt.Errorf("Error accessing amtool command, try 'make build' to generate the file. %v", err)
+		return false, fmt.Errorf("error accessing amtool command, try 'make build' to generate the file. %w", err)
 	} else if stat.IsDir() {
 		return false, fmt.Errorf("file %s is a directory, expecting a binary executable file", amtool)
 	}
@@ -145,7 +141,7 @@ func (t *AcceptanceTest) AlertmanagerCluster(conf string, size int) *Alertmanage
 			opts: t.opts,
 		}
 
-		dir, err := ioutil.TempDir("", "am_test")
+		dir, err := os.MkdirTemp("", "am_test")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -205,6 +201,10 @@ func (t *AcceptanceTest) Run() {
 	if err != nil {
 		t.T.Fatal(err)
 	}
+
+	// Set the reference time right before running the test actions to avoid
+	// test failures due to slow setup of the test environment.
+	t.opts.baseTime = time.Now()
 
 	go t.runActions()
 
@@ -270,7 +270,7 @@ type Alertmanager struct {
 
 	apiAddr     string
 	clusterAddr string
-	clientV2    *apiclient.Alertmanager
+	clientV2    *apiclient.AlertmanagerAPI
 	cmd         *exec.Cmd
 	confFile    *os.File
 	dir         string
@@ -363,7 +363,7 @@ func (am *Alertmanager) Start(additionalArg []string) error {
 		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("starting alertmanager failed: expected HTTP status '200', got '%d'", resp.StatusCode)
 		}
-		_, err = ioutil.ReadAll(resp.Body)
+		_, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("starting alertmanager failed: %s", err)
 		}
@@ -570,9 +570,7 @@ func (am *Alertmanager) QuerySilence() ([]TestSilence, error) {
 	return parseSilenceQueryResponse(out)
 }
 
-var (
-	silenceHeaderFields = []string{"ID", "Matchers", "Ends At", "Created By", "Comment"}
-)
+var silenceHeaderFields = []string{"ID", "Matchers", "Ends At", "Created By", "Comment"}
 
 func parseSilenceQueryResponse(data []byte) ([]TestSilence, error) {
 	sils := []TestSilence{}

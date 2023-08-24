@@ -48,21 +48,21 @@ func TestInhibitRuleHasEqual(t *testing.T) {
 		},
 		{
 			// No equal labels, any source alerts satisfies the requirement.
-			initial: map[model.Fingerprint]*types.Alert{1: &types.Alert{}},
+			initial: map[model.Fingerprint]*types.Alert{1: {}},
 			input:   model.LabelSet{"a": "b"},
 			result:  true,
 		},
 		{
 			// Matching but already resolved.
 			initial: map[model.Fingerprint]*types.Alert{
-				1: &types.Alert{
+				1: {
 					Alert: model.Alert{
 						Labels:   model.LabelSet{"a": "b", "b": "f"},
 						StartsAt: now.Add(-time.Minute),
 						EndsAt:   now.Add(-time.Second),
 					},
 				},
-				2: &types.Alert{
+				2: {
 					Alert: model.Alert{
 						Labels:   model.LabelSet{"a": "b", "b": "c"},
 						StartsAt: now.Add(-time.Minute),
@@ -77,14 +77,14 @@ func TestInhibitRuleHasEqual(t *testing.T) {
 		{
 			// Matching and unresolved.
 			initial: map[model.Fingerprint]*types.Alert{
-				1: &types.Alert{
+				1: {
 					Alert: model.Alert{
 						Labels:   model.LabelSet{"a": "b", "c": "d"},
 						StartsAt: now.Add(-time.Minute),
 						EndsAt:   now.Add(-time.Second),
 					},
 				},
-				2: &types.Alert{
+				2: {
 					Alert: model.Alert{
 						Labels:   model.LabelSet{"a": "b", "c": "f"},
 						StartsAt: now.Add(-time.Minute),
@@ -99,14 +99,14 @@ func TestInhibitRuleHasEqual(t *testing.T) {
 		{
 			// Equal label does not match.
 			initial: map[model.Fingerprint]*types.Alert{
-				1: &types.Alert{
+				1: {
 					Alert: model.Alert{
 						Labels:   model.LabelSet{"a": "c", "c": "d"},
 						StartsAt: now.Add(-time.Minute),
 						EndsAt:   now.Add(-time.Second),
 					},
 				},
-				2: &types.Alert{
+				2: {
 					Alert: model.Alert{
 						Labels:   model.LabelSet{"a": "c", "c": "f"},
 						StartsAt: now.Add(-time.Minute),
@@ -153,7 +153,7 @@ func TestInhibitRuleMatches(t *testing.T) {
 	}
 
 	m := types.NewMarker(prometheus.NewRegistry())
-	ih := NewInhibitor(nil, []*config.InhibitRule{&rule1, &rule2}, m, nopLogger)
+	ih := NewInhibitor(nil, []config.InhibitRule{rule1, rule2}, m, nopLogger)
 	now := time.Now()
 	// Active alert that matches the source filter of rule1.
 	sourceAlert1 := &types.Alert{
@@ -233,6 +233,7 @@ func TestInhibitRuleMatches(t *testing.T) {
 		}
 	}
 }
+
 func TestInhibitRuleMatchers(t *testing.T) {
 	t.Parallel()
 
@@ -248,7 +249,7 @@ func TestInhibitRuleMatchers(t *testing.T) {
 	}
 
 	m := types.NewMarker(prometheus.NewRegistry())
-	ih := NewInhibitor(nil, []*config.InhibitRule{&rule1, &rule2}, m, nopLogger)
+	ih := NewInhibitor(nil, []config.InhibitRule{rule1, rule2}, m, nopLogger)
 	now := time.Now()
 	// Active alert that matches the source filter of rule1.
 	sourceAlert1 := &types.Alert{
@@ -369,8 +370,8 @@ func TestInhibit(t *testing.T) {
 	t.Parallel()
 
 	now := time.Now()
-	inhibitRule := func() *config.InhibitRule {
-		return &config.InhibitRule{
+	inhibitRule := func() config.InhibitRule {
+		return config.InhibitRule{
 			SourceMatch: map[string]string{"s": "1"},
 			TargetMatch: map[string]string{"t": "1"},
 			Equal:       model.LabelNames{"e"},
@@ -451,7 +452,7 @@ func TestInhibit(t *testing.T) {
 	} {
 		ap := newFakeAlerts(tc.alerts)
 		mk := types.NewMarker(prometheus.NewRegistry())
-		inhibitor := NewInhibitor(ap, []*config.InhibitRule{inhibitRule()}, mk, nopLogger)
+		inhibitor := NewInhibitor(ap, []config.InhibitRule{inhibitRule()}, mk, nopLogger)
 
 		go func() {
 			for ap.finished != nil {

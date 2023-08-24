@@ -80,7 +80,7 @@ func (o *PostSilencesParams) BindRequest(r *http.Request, route *middleware.Matc
 				res = append(res, err)
 			}
 
-			ctx := validate.WithOperationRequest(context.Background())
+			ctx := validate.WithOperationRequest(r.Context())
 			if err := body.ContextValidate(ctx, route.Formats); err != nil {
 				res = append(res, err)
 			}

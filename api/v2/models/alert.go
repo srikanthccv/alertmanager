@@ -82,6 +82,8 @@ func (m *Alert) validateLabels(formats strfmt.Registry) error {
 		if err := m.Labels.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("labels")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("labels")
 			}
 			return err
 		}
@@ -109,6 +111,8 @@ func (m *Alert) contextValidateLabels(ctx context.Context, formats strfmt.Regist
 	if err := m.Labels.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("labels")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("labels")
 		}
 		return err
 	}

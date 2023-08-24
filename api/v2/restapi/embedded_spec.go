@@ -48,6 +48,7 @@ func init() {
     },
     "version": "0.0.1"
   },
+  "basePath": "/api/v2/",
   "paths": {
     "/alerts": {
       "get": {
@@ -270,6 +271,9 @@ func init() {
         "responses": {
           "200": {
             "description": "Delete silence response"
+          },
+          "404": {
+            "description": "A silence with the specified ID was not found"
           },
           "500": {
             "$ref": "#/responses/InternalServerError"
@@ -838,6 +842,7 @@ func init() {
     },
     "version": "0.0.1"
   },
+  "basePath": "/api/v2/",
   "paths": {
     "/alerts": {
       "get": {
@@ -1081,6 +1086,9 @@ func init() {
         "responses": {
           "200": {
             "description": "Delete silence response"
+          },
+          "404": {
+            "description": "A silence with the specified ID was not found"
           },
           "500": {
             "description": "Internal server error",

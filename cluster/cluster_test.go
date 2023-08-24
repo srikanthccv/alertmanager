@@ -49,10 +49,12 @@ func testJoinLeave(t *testing.T) {
 		true,
 		DefaultPushPullInterval,
 		DefaultGossipInterval,
-		DefaultTcpTimeout,
+		DefaultTCPTimeout,
 		DefaultProbeTimeout,
 		DefaultProbeInterval,
 		nil,
+		false,
+		"",
 	)
 	require.NoError(t, err)
 	require.NotNil(t, p)
@@ -82,10 +84,12 @@ func testJoinLeave(t *testing.T) {
 		true,
 		DefaultPushPullInterval,
 		DefaultGossipInterval,
-		DefaultTcpTimeout,
+		DefaultTCPTimeout,
 		DefaultProbeTimeout,
 		DefaultProbeInterval,
 		nil,
+		false,
+		"",
 	)
 	require.NoError(t, err)
 	require.NotNil(t, p2)
@@ -116,10 +120,12 @@ func testReconnect(t *testing.T) {
 		true,
 		DefaultPushPullInterval,
 		DefaultGossipInterval,
-		DefaultTcpTimeout,
+		DefaultTCPTimeout,
 		DefaultProbeTimeout,
 		DefaultProbeInterval,
 		nil,
+		false,
+		"",
 	)
 	require.NoError(t, err)
 	require.NotNil(t, p)
@@ -140,10 +146,12 @@ func testReconnect(t *testing.T) {
 		true,
 		DefaultPushPullInterval,
 		DefaultGossipInterval,
-		DefaultTcpTimeout,
+		DefaultTCPTimeout,
 		DefaultProbeTimeout,
 		DefaultProbeInterval,
 		nil,
+		false,
+		"",
 	)
 	require.NoError(t, err)
 	require.NotNil(t, p2)
@@ -179,10 +187,12 @@ func testRemoveFailedPeers(t *testing.T) {
 		true,
 		DefaultPushPullInterval,
 		DefaultGossipInterval,
-		DefaultTcpTimeout,
+		DefaultTCPTimeout,
 		DefaultProbeTimeout,
 		DefaultProbeInterval,
 		nil,
+		false,
+		"",
 	)
 	require.NoError(t, err)
 	require.NotNil(t, p)
@@ -229,10 +239,12 @@ func testInitiallyFailingPeers(t *testing.T) {
 		true,
 		DefaultPushPullInterval,
 		DefaultGossipInterval,
-		DefaultTcpTimeout,
+		DefaultTCPTimeout,
 		DefaultProbeTimeout,
 		DefaultProbeInterval,
 		nil,
+		false,
+		"",
 	)
 	require.NoError(t, err)
 	require.NotNil(t, p)
@@ -275,10 +287,12 @@ func testTLSConnection(t *testing.T) {
 		true,
 		DefaultPushPullInterval,
 		DefaultGossipInterval,
-		DefaultTcpTimeout,
+		DefaultTCPTimeout,
 		DefaultProbeTimeout,
 		DefaultProbeInterval,
 		tlsTransportConfig1,
+		false,
+		"",
 	)
 	require.NoError(t, err)
 	require.NotNil(t, p1)
@@ -305,10 +319,12 @@ func testTLSConnection(t *testing.T) {
 		true,
 		DefaultPushPullInterval,
 		DefaultGossipInterval,
-		DefaultTcpTimeout,
+		DefaultTCPTimeout,
 		DefaultProbeTimeout,
 		DefaultProbeInterval,
 		tlsTransportConfig2,
+		false,
+		"",
 	)
 	require.NoError(t, err)
 	require.NotNil(t, p2)

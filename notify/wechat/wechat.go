@@ -18,7 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -66,13 +66,13 @@ type weChatMessageContent struct {
 }
 
 type weChatResponse struct {
-	Code  int    `json:"code"`
-	Error string `json:"error"`
+	Code  int    `json:"errcode"`
+	Error string `json:"errmsg"`
 }
 
 // New returns a new Wechat notifier.
 func New(c *config.WechatConfig, t *template.Template, l log.Logger, httpOpts ...commoncfg.HTTPClientOption) (*Notifier, error) {
-	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, "wechat", append(httpOpts, commoncfg.WithHTTP2Disabled())...)
+	client, err := commoncfg.NewClientFromConfig(*c.HTTPConfig, "wechat", httpOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -168,10 +168,10 @@ func (n *Notifier) Notify(ctx context.Context, as ...*types.Alert) (bool, error)
 	defer notify.Drain(resp)
 
 	if resp.StatusCode != 200 {
-		return true, fmt.Errorf("unexpected status code %v", resp.StatusCode)
+		return true, notify.NewErrorWithReason(notify.GetFailureReasonFromStatusCode(resp.StatusCode), fmt.Errorf("unexpected status code %v", resp.StatusCode))
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return true, err
 	}

@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -69,7 +68,7 @@ func New(c *config.MSTeamsConfig, t *template.Template, l log.Logger, httpOpts .
 		tmpl:         t,
 		logger:       l,
 		client:       client,
-		retrier:      &notify.Retrier{RetryCodes: []int{429}},
+		retrier:      &notify.Retrier{},
 		webhookURL:   c.WebhookURL,
 		postJSONFunc: notify.PostJSON,
 	}
@@ -129,10 +128,9 @@ func (n *Notifier) Notify(ctx context.Context, as ...*types.Alert) (bool, error)
 	defer notify.Drain(resp)
 
 	// https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/connectors-using?tabs=cURL#rate-limiting-for-connectors
-	retry, err := n.retrier.Check(resp.StatusCode, resp.Body)
+	shouldRetry, err := n.retrier.Check(resp.StatusCode, resp.Body)
 	if err != nil {
-		reasonErr := notify.NewErrorWithReason(notify.GetFailureReason(resp.StatusCode, fmt.Sprintf("%v", err.Error())), err)
-		return retry, reasonErr
+		return shouldRetry, notify.NewErrorWithReason(notify.GetFailureReasonFromStatusCode(resp.StatusCode), err)
 	}
-	return false, nil
+	return shouldRetry, err
 }
